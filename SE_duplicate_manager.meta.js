@@ -24,6 +24,6 @@
 // @require      https://gist.github.com/Aran-Fey/bf2601224a3b60dea73072d941df39d8/raw/aac7590090c3c44250f41bc9c4752daac1cec88d/SE_userscript_lib.js
 // @grant        GM_setValue
 // @grant        GM_getValue
-// @updateURL    https://raw.githubusercontent.com/Aran-Fey/SE-duplicate-manager/master/SE_duplicate_manager.meta.js
-// @downloadURL  https://raw.githubusercontent.com/Aran-Fey/SE-duplicate-manager/master/SE_duplicate_manager.user.js
+// @updateURL    https://github.com/Aran-Fey/SE-duplicate-manager/blob/master/SE_duplicate_manager.meta.js
+// @downloadURL  https://github.com/Aran-Fey/SE-duplicate-manager/blob/master/SE_duplicate_manager.user.js
 // ==/UserScript==

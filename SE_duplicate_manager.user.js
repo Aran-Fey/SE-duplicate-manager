@@ -26,8 +26,8 @@
 // @grant        GM_getValue
 // @grant        GM.setValue
 // @grant        GM.getValue
-// @updateURL    https://github.com/Aran-Fey/SE-duplicate-manager/blob/master/SE_duplicate_manager.meta.js
-// @downloadURL  https://github.com/Aran-Fey/SE-duplicate-manager/blob/master/SE_duplicate_manager.user.js
+// @updateURL    https://github.com/Aran-Fey/SE-duplicate-manager/raw/master/SE_duplicate_manager.meta.js
+// @downloadURL  https://github.com/Aran-Fey/SE-duplicate-manager/raw/master/SE_duplicate_manager.user.js
 // ==/UserScript==
 
 

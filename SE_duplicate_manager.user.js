@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         StackExchange duplicate manager
 // @description  Lets you mark questions as commonly used duplicate targets, and search through your collection of duplicate targets from within the close question dialog
-// @version      1.1.4
+// @version      1.2
 // @author       Paul Pinterits
 // @include      *://*.stackexchange.com/questions/*
 // @include      *://meta.serverfault.com/questions/*
@@ -20,10 +20,12 @@
 // @exclude      *://*/questions/tagged/*
 // @exclude      *://*/questions/ask
 // @namespace    Aran-Fey
-// @require      https://gist.github.com/Aran-Fey/1aa6adbe30d8bd956be5ee11a112a70c/raw/a9e9bcd5f0efc9f6040497a48ccb972d41107375/userscript_lib.js
-// @require      https://gist.github.com/Aran-Fey/bf2601224a3b60dea73072d941df39d8/raw/aac7590090c3c44250f41bc9c4752daac1cec88d/SE_userscript_lib.js
+// @require      https://gist.github.com/Aran-Fey/1aa6adbe30d8bd956be5ee11a112a70c/raw/b60dc7cf39fdb4c90de65d6fe99c11aefd2c527d/userscript_lib.js
+// @require      https://gist.github.com/Aran-Fey/bf2601224a3b60dea73072d941df39d8/raw/9e0ed87914af398919ae7dc0b9a27aeb57b11a61/SE_userscript_lib.js
 // @grant        GM_setValue
 // @grant        GM_getValue
+// @grant        GM.setValue
+// @grant        GM.getValue
 // @updateURL    https://github.com/Aran-Fey/SE-duplicate-manager/blob/master/SE_duplicate_manager.meta.js
 // @downloadURL  https://github.com/Aran-Fey/SE-duplicate-manager/blob/master/SE_duplicate_manager.user.js
 // ==/UserScript==
@@ -42,38 +44,41 @@ function get_storage_key(){
     const key = hostname.replace(/\./, '_') + '_duplicates';
     return key;
 }
-function get_originals(reload){
-    if (ORIGINALS === null || reload === true){
-        const key = get_storage_key();
-        const origs_json = GM_getValue(key, '{}');
-        ORIGINALS = JSON.parse(origs_json);
-    }
+async function get_originals(reload){
+    if (ORIGINALS !== null && reload !== true)
+        return ORIGINALS;
     
+    const key = get_storage_key();
+    const origs_json = await UserScript.getValue(key, '{}');
+    ORIGINALS = JSON.parse(origs_json);
     return ORIGINALS;
 }
-function get_originals_list(){
-    return Object.values(get_originals());
+async function get_originals_list(){
+    const originals = await get_originals();
+    return Object.values(originals);
 }
-function get_originals_ids(){
+async function get_originals_ids(){
     const key = get_storage_key() + '_ids';
-    const ids_json = GM_getValue(key, '[]');
+    const ids_json = await UserScript.getValue(key, '[]');
     return JSON.parse(ids_json);
 }
-function set_originals(originals){
+async function set_originals(originals){
     ORIGINALS = originals;
-    save_originals();
+    await save_originals();
 }
 function save_originals(){
     const key = get_storage_key();
     const origs_json = JSON.stringify(ORIGINALS);
-    GM_setValue(key, origs_json);
+    const origs_promise = UserScript.setValue(key, origs_json);
     
     // since the IDS are used very often, we'll save those separately so
     // that they can be deserialized faster
     const ids_key = key + '_ids';
     const ids = Object.keys(ORIGINALS);
     const ids_json = JSON.stringify(ids);
-    GM_setValue(ids_key, ids_json);
+    const ids_promise = UserScript.setValue(ids_key, ids_json);
+    
+    return Promise.all([origs_promise, ids_promise]);
 }
 
 
@@ -111,12 +116,12 @@ function make_collection_toggle_button(){
  * Updates the UI (the state of the button, and the existence of the keywords
  * textbox) to reflect the duplicate status of the question.
  */
-function refresh_in_collection_status(state){
+async function refresh_in_collection_status(state){
     const id = page.question.id;
     const toggle_button = document.getElementById('toggle-original-button');
     
     if (state === undefined){
-        const ids = get_originals_ids();
+        const ids = await get_originals_ids();
         state = ids.includes(id);
     }
     
@@ -146,8 +151,8 @@ function refresh_in_collection_status(state){
  * Toggles the status of the currently opened question - adds/removes it from
  * the collection.
  */
-function toggle_in_collecton(){
-    const collection = get_originals(true);
+async function toggle_in_collecton(){
+    const collection = await get_originals(true);
     const id = page.question.id;
     const state = collection.hasOwnProperty(id);
     
@@ -162,9 +167,9 @@ function toggle_in_collecton(){
             keywords: [],
         };
     }
-    
-    set_originals(collection);
-    refresh_in_collection_status(!state);
+        
+    await set_originals(collection);
+    await refresh_in_collection_status(!state);
 }
 
 /* ===========
@@ -210,7 +215,7 @@ function make_popup_dialog(title){
  * Creates the keyword input element for questions that have been added to the
  * collection.
  */
-function make_keyword_list(){
+async function make_keyword_list(){
     const container = document.createElement('div');
     container.id = 'original-keyword-list-container';
     
@@ -227,7 +232,7 @@ function make_keyword_list(){
             save_keywords();
     });
     
-    const collection = get_originals();
+    const collection = await get_originals();
     const original = collection[page.question.id];
     keyword_list.value = original.keywords.join(' ');
     // for (const keyword of duplicate.keywords){
@@ -239,15 +244,15 @@ function make_keyword_list(){
     const keyword_list_parent = document.querySelector('.post-taglist');
     keyword_list_parent.appendChild(container);
 }
-function save_keywords(){
+async function save_keywords(){
     const keyword_list = document.getElementById('original-keyword-list');
     const keywords = keyword_list.value.split(/\s+/);
     
-    const collection = get_originals();
+    const collection = await get_originals();
     const original = collection[page.question.id];
     original.keywords = keywords;
     
-    save_originals();
+    await save_originals();
 }
 
 /* ===========
@@ -394,7 +399,7 @@ function create_original_list_item(original){
  * Clears the list of suggested originals and fills it with the best matches
  * for the current question and search terms.
  */
-function insert_suggestions(clear_other_suggestions){
+async function insert_suggestions(clear_other_suggestions){
     const searchbar = document.getElementById('duplicate-manager-searchbar');
     const searchterm = searchbar.value.toLowerCase();
     
@@ -411,7 +416,7 @@ function insert_suggestions(clear_other_suggestions){
         list_elem.removeChild(list_elem.firstChild);
     
     // search for related questions
-    const originals = get_originals_list();
+    const originals = await get_originals_list();
     const search_terms = new Set(searchterm.split(/\s+/));
     
     const is_question_page = !window.location.href.includes('/originals/');
@@ -482,17 +487,17 @@ function insert_suggestions(clear_other_suggestions){
  * Displays an initial batch of suggested originals and questions from other
  * close voters.
  */
-function insert_initial_suggestions(){
+async function insert_initial_suggestions(){
     if (document.location.href.includes('/originals/')){
-        insert_suggestions();
+        await insert_suggestions();
         return;
     }
     
-    const DUPE_MSG = 'Possible duplicate of';
+    const DUPE_MSG = 'Possible duplicate of ';
     const suggested_dupe_comments = page.question.comments.filter(c => c.text.startsWith(DUPE_MSG));
     
     if (suggested_dupe_comments.length == 0){
-        insert_suggestions();
+        await insert_suggestions();
         return;
     }
     
@@ -596,7 +601,7 @@ function make_originals_collection_tab(){
 /*
  * Displays the complete list of originals in the "duplicates" tab.
  */
-function populate_originals_collection_tab(){
+async function populate_originals_collection_tab(){
     for (const button of document.querySelectorAll('.tabs a')){
         if (button.id === 'originals-collection-tab-button')
             button.classList.add('youarehere');
@@ -604,7 +609,7 @@ function populate_originals_collection_tab(){
             button.classList.remove('youarehere');
     }
     
-    const originals = get_originals_list();
+    const originals = await get_originals_list();
     
     const tab = document.createElement('div');
     tab.id = 'duplicate-targets-tab';
@@ -696,13 +701,13 @@ function show_import_dialog(){
     
     const add_button = document.createElement('button');
     add_button.textContent = 'Add to collection';
-    add_button.addEventListener('click', function(){
+    add_button.addEventListener('click', async function(){
         const json_dump = dialog.querySelector('textarea').value;
         const collection = JSON.parse(json_dump);
         
-        const originals = get_originals();
+        const originals = await get_originals();
         Object.assign(originals, collection);
-        set_originals(originals);
+        await set_originals(originals);
         
         dialog.remove();
         refresh_list();
@@ -711,10 +716,10 @@ function show_import_dialog(){
     
     const replace_button = document.createElement('button');
     replace_button.textContent = 'Overwrite collection';
-    replace_button.addEventListener('click', function(){
+    replace_button.addEventListener('click', async function(){
         const json_dump = dialog.querySelector('textarea').value;
         const collection = JSON.parse(json_dump);
-        set_originals(collection);
+        await set_originals(collection);
         
         dialog.remove();
         refresh_list();
@@ -723,13 +728,14 @@ function show_import_dialog(){
     
     document.body.appendChild(dialog);
 }
-function show_export_dialog(){
+async function show_export_dialog(){
     const dialog = make_import_export_dialog(
         "Export duplicate collection",
         "Here's a JSON dump of your duplicate collection:"
     );
     
-    dialog.querySelector('textarea').value = JSON.stringify(get_originals(true));
+    const collection = await get_originals(true);
+    dialog.querySelector('textarea').value = JSON.stringify(collection);
     
     document.body.appendChild(dialog);
 }

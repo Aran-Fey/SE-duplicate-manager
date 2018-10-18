@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         StackExchange duplicate manager
 // @description  Lets you mark questions as commonly used duplicate targets, and search through your collection of duplicate targets from within the close question dialog
-// @version      1.2.1
+// @version      1.2.2
 // @author       Paul Pinterits
 // @include      *://*.stackexchange.com/questions/*
 // @include      *://meta.serverfault.com/questions/*
@@ -295,20 +295,18 @@ function select_original_suggestion(original){
 function add_back_to_original_suggestions_button(){
     // for some reason the button is automatically added when we're on the
     // gold-badge holder "edit duplicate list" page, but anywhere else it's
-    // not
-    if (document.location.href.includes('/originals/'))
-        return;  // FIXME: the default button doesn't reset the old searchbar's text, so nothing will happen if the user clicks the same question again
-    
+    // not. We'll just make our own button and hide the original one with CSS.
     const nav_container = document.querySelector('.navi-container');
     
-    var link = nav_container.querySelector('a');
-    if (link === null){
-        link = document.createElement('a');
-        nav_container.appendChild(link);
-    }
-    
-    link.textContent = '< back to similar questions';
+    var link = nav_container.querySelector('a.back-to-originals');
+    if (link !== null)
+        return;
+        
+    link = document.createElement('a');
+    link.classList.add('back-to-originals');
+    link.textContent = '< back to suggested duplicate targets';
     link.addEventListener('click', return_to_originals_list);
+    nav_container.appendChild(link);
 }
 function return_to_originals_list(e){
     const nav_container = document.querySelector('.navi-container');
@@ -763,6 +761,11 @@ add_style(`
  * ORIGINALS SUGGESTIONS DIALOG
  * ============================
 */
+/* this hides the original "< back to similar questions" button */
+.navi-container .navi a:not(.back-to-originals) {
+    display: none;
+}
+
 #original-keyword-list-container {
     display: flex;
 }

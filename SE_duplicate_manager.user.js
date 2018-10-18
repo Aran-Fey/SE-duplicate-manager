@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         StackExchange duplicate manager
 // @description  Lets you mark questions as commonly used duplicate targets, and search through your collection of duplicate targets from within the close question dialog
-// @version      1.2
+// @version      1.2.1
 // @author       Paul Pinterits
 // @include      *://*.stackexchange.com/questions/*
 // @include      *://meta.serverfault.com/questions/*
@@ -504,7 +504,7 @@ async function insert_initial_suggestions(){
     for (const comment of suggested_dupe_comments){
         const item = {
             id: /\/(\d+)\//.exec(comment.querySelector('.comment-copy a').href)[1],
-            title: comment.text.substring(DUPE_MSG.length + 1),
+            title: comment.text.substring(DUPE_MSG.length),
             text: null,
             tags: [],
             keywords: [],

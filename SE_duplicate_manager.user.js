@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         StackExchange duplicate manager
 // @description  Lets you mark questions as commonly used duplicate targets, and search through your collection of duplicate targets from within the close question dialog
-// @version      1.2.2
+// @version      1.2.3
 // @author       Paul Pinterits
 // @include      *://*.stackexchange.com/questions/*
 // @include      *://meta.serverfault.com/questions/*
@@ -20,8 +20,8 @@
 // @exclude      *://*/questions/tagged/*
 // @exclude      *://*/questions/ask
 // @namespace    Aran-Fey
-// @require      https://gist.github.com/Aran-Fey/1aa6adbe30d8bd956be5ee11a112a70c/raw/b60dc7cf39fdb4c90de65d6fe99c11aefd2c527d/userscript_lib.js
-// @require      https://gist.github.com/Aran-Fey/bf2601224a3b60dea73072d941df39d8/raw/9e0ed87914af398919ae7dc0b9a27aeb57b11a61/SE_userscript_lib.js
+// @require      https://github.com/Aran-Fey/userscript-lib/raw/32d65b6a5c357414fe2d0c74645f6af1fe0e88db/userscript_lib.js
+// @require      https://github.com/Aran-Fey/SE-userscript-lib/raw/80f15404a4f5d620ae68ebd67876daa1dadfb464/SE_userscript_lib.js
 // @grant        GM_setValue
 // @grant        GM_getValue
 // @grant        GM.setValue
@@ -108,8 +108,6 @@ function make_collection_toggle_button(){
     
     const parent = fav_button.parentElement;
     parent.appendChild(toggle_button);
-    
-    refresh_in_collection_status();
 }
 
 /*
@@ -856,6 +854,7 @@ if (document.location.href.includes('/users/')){
         make_originals_collection_tab();
 } else {
     make_collection_toggle_button();
+    page.transform_question((q) => refresh_in_collection_status(), Rerun.AFTER_CHANGE);
 
     function on_click(event){
         // check if the "Add duplicate" gold-badge holder button was pressed

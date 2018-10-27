@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         StackExchange duplicate manager
 // @description  Lets you mark questions as commonly used duplicate targets, and search through your collection of duplicate targets from within the close question dialog
-// @version      1.2.4
+// @version      1.2.5
 // @author       Paul Pinterits
 // @include      *://*.stackexchange.com/questions/*
 // @include      *://meta.serverfault.com/questions/*
@@ -244,7 +244,7 @@ async function make_keyword_list(){
 }
 async function save_keywords(){
     const keyword_list = document.getElementById('original-keyword-list');
-    const keywords = keyword_list.value.split(/\s+/);
+    const keywords = keyword_list.value.split(/\s+/).filter((e) => e);
     
     const collection = await get_originals();
     const original = collection[page.question.id];

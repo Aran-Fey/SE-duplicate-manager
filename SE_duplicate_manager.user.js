@@ -853,8 +853,10 @@ if (document.location.href.includes('/users/')){
     if (document.querySelector('#tabs a[href^="/users/edit/"]') !== null)
         make_originals_collection_tab();
 } else {
-    make_collection_toggle_button();
-    page.transform_question((q) => refresh_in_collection_status(), Rerun.AFTER_CHANGE);
+    if (!document.location.href.includes('/originals/')){
+        make_collection_toggle_button();
+        page.transform_question((q) => refresh_in_collection_status(), Rerun.AFTER_CHANGE);
+    }
 
     function on_click(event){
         // check if the "Add duplicate" gold-badge holder button was pressed

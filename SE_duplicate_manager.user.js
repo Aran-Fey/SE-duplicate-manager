@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         StackExchange duplicate manager
 // @description  Lets you mark questions as commonly used duplicate targets, and search through your collection of duplicate targets from within the close question dialog
-// @version      1.2.5
+// @version      1.2.6
 // @author       Paul Pinterits
 // @include      *://*.stackexchange.com/questions/*
 // @include      *://meta.serverfault.com/questions/*
@@ -434,7 +434,7 @@ async function insert_suggestions(clear_other_suggestions){
                     break;
                 }
             }
-            if (!ok)
+            if (!ok && !original.tags.includes('language-agnostic'))
                 return -1;
         }
         

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         StackExchange duplicate manager
 // @description  Lets you mark questions as commonly used duplicate targets, and search through your collection of duplicate targets from within the close question dialog
-// @version      1.2.6
+// @version      1.2.7
 // @author       Paul Pinterits
 // @include      *://*.stackexchange.com/questions/*
 // @include      *://meta.serverfault.com/questions/*
@@ -91,19 +91,19 @@ function save_originals(){
  * Creates the button that adds/removes a question to/from the collection.
  */
 function make_collection_toggle_button(){
-    const fav_button = document.querySelector('.star-off');
+    const fav_button = document.querySelector('.js-favorite-btn');
     if (fav_button === null)
         return;
     
-    const toggle_button = document.createElement('A');
+    const toggle_button = document.createElement('BUTTON');
     toggle_button.id = 'toggle-original-button';
     toggle_button.onclick = toggle_in_collecton;
-    toggle_button.classList.add('is-original-off');
+    toggle_button.classList.add('is-original-off', 's-btn', 's-btn__unset');
     
     const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     icon.innerHTML = icon_code;
     icon.setAttribute('viewBox', '0 0 50 50');
-    icon.style.width = icon.style.height = '25px';
+    icon.style.width = icon.style.height = '22px';
     toggle_button.appendChild(icon);
     
     const parent = fav_button.parentElement;

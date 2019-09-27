@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         StackExchange duplicate manager
 // @description  Lets you mark questions as commonly used duplicate targets, and search through your collection of duplicate targets from within the close question dialog
-// @version      1.2.8
+// @version      1.2.10
 // @author       Paul Pinterits
 // @include      *://*.stackexchange.com/questions/*
 // @include      *://meta.serverfault.com/questions/*
@@ -21,7 +21,7 @@
 // @exclude      *://*/questions/ask
 // @namespace    Aran-Fey
 // @require      https://github.com/Aran-Fey/userscript-lib/raw/0b47391750e823901a57f0264470b2bef4dc602c/userscript_lib.js
-// @require      https://github.com/Aran-Fey/SE-userscript-lib/raw/80f15404a4f5d620ae68ebd67876daa1dadfb464/SE_userscript_lib.js
+// @require      https://github.com/Aran-Fey/SE-userscript-lib/raw/4369a5f1208fc0dddc37e43435913e1d9c2cb365/SE_userscript_lib.js
 // @grant        GM_setValue
 // @grant        GM_getValue
 // @grant        GM.setValue
@@ -422,6 +422,22 @@ async function insert_suggestions(clear_other_suggestions){
         question_text = page.question.extract_text().toLowerCase();
     
     function rate_original(original){
+        function compare(term, word, weight){
+            var score = 0.0;
+
+            word = word.toLowerCase();
+            term = term.toLowerCase();
+
+            if (word.includes(term)){
+                score += term.length * weight;
+
+                if (term == word)
+                    score *= 1.5;
+            }
+
+            return score;
+        }
+
         // if the current question doesn't have a single tag in common with the
         // suggested question, it's out. This is to prevent questions about
         // language X from showing up on questions about language Y.
@@ -443,19 +459,19 @@ async function insert_suggestions(clear_other_suggestions){
         for (const term of search_terms){
             // check if any keywords match the search terms
             for (var kword of original.keywords){
-                kword = kword.toLowerCase();
-                
-                if (kword.includes(term))
-                    score += term.length * 5;
+                score += compare(term, kword, 5);
+            }
+
+            // check if any tags match the search terms
+            for (var tag of original.tags){
+                score += compare(term, tag, 4);
             }
 
             // check if the question title contains this search term
-            if (original.title.includes(term))
-                score += term.length * 3;
+            score += compare(term, original.title, 3);
             
             // check if the question text contains this search term
-            if (original.text.includes(term))
-                score += term.length;
+            score += compare(term, original.text, 1);
         }
         
         // check how many of the original's keywords the question contains

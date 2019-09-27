@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         StackExchange duplicate manager
 // @description  Lets you mark questions as commonly used duplicate targets, and search through your collection of duplicate targets from within the close question dialog
-// @version      1.2.8
+// @version      1.2.10
 // @author       Paul Pinterits
 // @include      *://*.stackexchange.com/questions/*
 // @include      *://meta.serverfault.com/questions/*
@@ -21,7 +21,7 @@
 // @exclude      *://*/questions/ask
 // @namespace    Aran-Fey
 // @require      https://github.com/Aran-Fey/userscript-lib/raw/0b47391750e823901a57f0264470b2bef4dc602c/userscript_lib.js
-// @require      https://github.com/Aran-Fey/SE-userscript-lib/raw/80f15404a4f5d620ae68ebd67876daa1dadfb464/SE_userscript_lib.js
+// @require      https://github.com/Aran-Fey/SE-userscript-lib/raw/4369a5f1208fc0dddc37e43435913e1d9c2cb365/SE_userscript_lib.js
 // @grant        GM_setValue
 // @grant        GM_getValue
 // @grant        GM.setValue

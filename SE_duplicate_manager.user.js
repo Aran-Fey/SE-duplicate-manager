@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         StackExchange duplicate manager
 // @description  Lets you mark questions as commonly used duplicate targets, and search through your collection of duplicate targets from within the close question dialog
-// @version      1.3
+// @version      1.4
 // @author       Paul Pinterits
 // @include      *://*.stackexchange.com/questions/*
 // @include      *://meta.serverfault.com/questions/*
@@ -21,7 +21,7 @@
 // @exclude      *://*/questions/ask
 // @namespace    Aran-Fey
 // @require      https://github.com/Aran-Fey/userscript-lib/raw/60f9b285091e93d3879c7e94233192b7ab370821/userscript_lib.js
-// @require      https://github.com/Aran-Fey/SE-userscript-lib/raw/bf77f40b25d7fa88a6c3f474390c858446154ec2/SE_userscript_lib.js
+// @require      https://github.com/Aran-Fey/SE-userscript-lib/raw/929a2b865752ffa8496c33f437a3a34af32eccba/SE_userscript_lib.js
 // @grant        GM_setValue
 // @grant        GM_getValue
 // @grant        GM.setValue
@@ -49,7 +49,7 @@
         if (ORIGINALS !== null && reload !== true){
             return ORIGINALS;
         }
-        
+
         const key = get_storage_key();
         const origs_json = await UserScript.getValue(key, '{}');
         ORIGINALS = JSON.parse(origs_json);
@@ -72,14 +72,14 @@
         const key = get_storage_key();
         const origs_json = JSON.stringify(ORIGINALS);
         const origs_promise = UserScript.setValue(key, origs_json);
-        
+
         // since the IDS are used very often, we'll save those separately so
         // that they can be deserialized faster
         const ids_key = key + '_ids';
         const ids = Object.keys(ORIGINALS);
         const ids_json = JSON.stringify(ids);
         const ids_promise = UserScript.setValue(ids_key, ids_json);
-        
+
         return Promise.all([origs_promise, ids_promise]);
     }
 
@@ -89,7 +89,7 @@
      * ===========
     */
 
-    /* 
+    /*
      * Creates the button that adds/removes a question to/from the collection.
      */
     function make_collection_toggle_button(){
@@ -97,18 +97,18 @@
         if (fav_button === null){
             return;
         }
-        
-        const toggle_button = document.createElement('BUTTON');
+
+        const toggle_button = document.createElement('div');
         toggle_button.id = 'toggle-original-button';
-        toggle_button.onclick = toggle_in_collecton;
         toggle_button.classList.add('is-original-off', 's-btn', 's-btn__unset');
-        
+        toggle_button.addEventListener('click', toggle_in_collecton);
+
         const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         icon.innerHTML = ICON_CODE;
         icon.setAttribute('viewBox', '0 0 50 50');
         icon.style.width = icon.style.height = '22px';
         toggle_button.appendChild(icon);
-        
+
         const parent = fav_button.parentElement;
         parent.appendChild(toggle_button);
     }
@@ -120,12 +120,12 @@
     async function refresh_in_collection_status(state){
         const id = page.question.id;
         const toggle_button = document.getElementById('toggle-original-button');
-        
+
         if (state === undefined){
             const ids = await get_originals_ids();
             state = ids.includes(id);
         }
-        
+
         // set the button state
         if (state){
             toggle_button.classList.add('is-original-on');
@@ -134,7 +134,7 @@
             toggle_button.classList.remove('is-original-on');
             toggle_button.title = 'Click to add this question to your collection of duplicate targets';
         }
-        
+
         // add or remove the keyword editor
         const keyword_list = document.getElementById('original-keyword-list-container');
         if (state){
@@ -156,7 +156,7 @@
         const collection = await get_originals(true);
         const id = page.question.id;
         const state = collection.hasOwnProperty(id);
-        
+
         if (state){
             delete collection[id];
         } else {
@@ -168,7 +168,7 @@
                 keywords: [],
             };
         }
-            
+
         await set_originals(collection);
         await refresh_in_collection_status(!state);
     }
@@ -185,45 +185,43 @@
     function make_popup_dialog(title){
         const dialog = document.createElement('div');
         dialog.classList.add('popup', 'popup-dialog');
-        
+
         // add a close button
         const close_container = document.createElement('div');
         close_container.classList.add('popup-close');
-        
+
         const close_button = document.createElement('a');
         close_button.textContent = '×';
-        close_button.addEventListener('click', function(){
-            dialog.remove();
-        });
-        
+        close_button.addEventListener('click', () => dialog.remove());
+
         close_container.appendChild(close_button);
         dialog.appendChild(close_container);
-        
+
         // add a title
         if (title !== undefined){
             const header = document.createElement('h1');
             header.classList.add('dialog-title');
             header.textContent = title;
-            
+
             dialog.appendChild(header);
         }
-        
+
         return dialog;
     }
 
 
-    /* 
+    /*
      * Creates the keyword input element for questions that have been added to the
      * collection.
      */
     async function make_keyword_list(){
         const container = document.createElement('div');
         container.id = 'original-keyword-list-container';
-        
+
         const label = document.createElement('label');
         label.textContent = 'Keywords:  ';
         container.appendChild(label);
-        
+
         const keyword_list = document.createElement('input');
         keyword_list.type = 'text';
         keyword_list.id = 'original-keyword-list';
@@ -233,27 +231,27 @@
                 save_keywords();
             }
         });
-        
+
         const collection = await get_originals();
         const original = collection[page.question.id];
         keyword_list.value = original.keywords.join(' ');
         // for (const keyword of duplicate.keywords){
             // keyword_list.value += keyword + ' ';
         // }
-        
+
         container.appendChild(keyword_list)
-        
+
         const keyword_list_parent = document.querySelector('.post-taglist');
         keyword_list_parent.appendChild(container);
     }
     async function save_keywords(){
         const keyword_list = document.getElementById('original-keyword-list');
         const keywords = keyword_list.value.split(/\s+/).filter((e) => e);
-        
+
         const collection = await get_originals();
         const original = collection[page.question.id];
         original.keywords = keywords;
-        
+
         await save_originals();
     }
 
@@ -269,13 +267,13 @@
     function insert_original_selection(target_url){
         const searchbar = document.getElementById('duplicate-manager-searchbar');
         searchbar.value = target_url;
-        
+
         const old_searchbar = document.getElementById('search-text');
         old_searchbar.value = target_url;
-        
+
         // trigger a keypress event so that SO notices the change
         old_searchbar.dispatchEvent(new KeyboardEvent('keydown', {'key': ' '}));
-        
+
         // for some reason the "back to similar questions" button doesn't appear,
         // so we'll make our own
         add_back_to_original_suggestions_button();
@@ -299,12 +297,12 @@
         // gold-badge holder "edit duplicate list" page, but anywhere else it's
         // not. We'll just make our own button and hide the original one with CSS.
         const nav_container = document.querySelector('.navi-container');
-        
+
         var link = nav_container.querySelector('a.back-to-originals');
         if (link !== null){
             return;
         }
-            
+
         link = document.createElement('a');
         link.classList.add('back-to-originals');
         link.textContent = '< back to suggested duplicate targets';
@@ -314,16 +312,16 @@
     function return_to_originals_list(e){
         const nav_container = document.querySelector('.navi-container');
         nav_container.lastChild.remove();
-        
+
         const container = nav_container.parentElement;
         container.querySelector('.preview').style.display = 'none';
         container.querySelector('.list-container').style.display = 'block';
-        
+
         // reset the value of the old searchbar, otherwise it won't react if the
         // same question is selected again
         const old_searchbar = document.getElementById('search-text');
         old_searchbar.value = '';
-        
+
         // trigger a keypress event so that SO notices the change
         old_searchbar.dispatchEvent(new KeyboardEvent('keydown', {'key': ' '}));
     }
@@ -340,58 +338,65 @@
             select_original_suggestion(original);
             e.preventDefault();
         }, true);
-        
+
+        container.addEventListener('mouseover', function(){
+            container.classList.add('hover');
+        });
+        container.addEventListener('mouseout', function(){
+            container.classList.remove('hover');
+        });
+
         // summary
         const summary_container = document.createElement('div');
         summary_container.classList.add('summary');
-        
+
         // title
         const title_container = document.createElement('div');
         title_container.classList.add('post-link');
-        
+
         const title = document.createElement('a');
         title.classList.add('title');
         title.href = '/questions/' + original.id;
         title.target = '_blank';
         title.textContent = original.title;
         title_container.appendChild(title);
-        
+
         if (original.num_votes !== undefined){
             const votes_indicator = document.createElement('span');
             votes_indicator.classList.add('bounty-indicator-tab');
             votes_indicator.textContent = original.num_votes;
-            
+
             title_container.appendChild(votes_indicator);
         }
-        
+
         summary_container.appendChild(title_container);
         // end of title
-        
+
         if (original.text !== null){
             const summary = document.createElement('span');
             summary.classList.add('body-summary');
             summary.textContent = original.text.substr(0, 200) + ' ...';
             summary_container.appendChild(summary);
         }
-            
+
         container.appendChild(summary_container);
         // end of summary
-        
+
         // keywords
         const keyword_list = document.createElement('span');
         keyword_list.classList.add('original-keyword-list');
-        
+
         for (const keyword of original.keywords){
             const kw_element = document.createElement('a');
             kw_element.classList.add('post-tag', 'original-keyword');
             kw_element.textContent = keyword;
-            
+
             keyword_list.appendChild(kw_element);
         }
-        
+
         container.appendChild(keyword_list);
         // end of keywords
-        
+
         return container;
     }
 
@@ -403,31 +408,31 @@
     async function insert_suggestions(clear_other_suggestions){
         const searchbar = document.getElementById('duplicate-manager-searchbar');
         const searchterm = searchbar.value.toLowerCase();
-        
+
         // if it's a question url, use that as the dupe target
         const host = document.location.hostname;
         if (searchterm.includes(host)){
             insert_original_selection(searchterm);
             return;
         }
-        
+
         // clear the suggestion list
         const list_elem = document.getElementById('originals-list');
         while (list_elem.firstChild){
             list_elem.removeChild(list_elem.firstChild);
         }
-        
+
         // search for related questions
         const originals = await get_originals_list();
         const search_terms = new Set(searchterm.split(/\s+/));
-        
+
         const is_question_page = !window.location.href.includes('/originals/');
-        
+
         var question_text = "";
         if (is_question_page){
             question_text = page.question.extract_text().toLowerCase();
         }
-        
+
         function rate_original(original){
             function compare(term, word, weight){
                 var score = 0.0;
@@ -462,9 +467,9 @@
                     return -1;
                 }
             }
-            
+
             var score = 0;
-            
+
             for (const term of search_terms){
                 // check if any keywords match the search terms
                 for (var kword of original.keywords){
@@ -478,21 +483,21 @@
 
                 // check if the question title contains this search term
                 score += compare(term, original.title, 3);
-                
+
                 // check if the question text contains this search term
                 score += compare(term, original.text, 1);
             }
-            
+
             // check how many of the original's keywords the question contains
             for (const keyword of original.keywords){
                 if (question_text.includes(keyword.toLowerCase())){
                     score += 1;
                 }
             }
-            
+
             return score;
         }
-        
+
         // rate each suggestion
         var suggestions = originals.map(q => [rate_original(q), q]);
         // remove the junk
@@ -503,7 +508,7 @@
         suggestions = suggestions.slice(0, 8);
         // remove the rating we used for the sort
         suggestions = suggestions.map(pair => pair[1]);
-        
+
         for (const original of suggestions){
             add_original_suggestion(original);
         }
@@ -518,15 +523,15 @@
             await insert_suggestions();
             return;
         }
-        
+
         const DUPE_MSG = 'Possible duplicate of ';
         const suggested_dupe_comments = page.question.comments.filter(c => c.text.startsWith(DUPE_MSG));
-        
+
         if (suggested_dupe_comments.length == 0){
             await insert_suggestions();
             return;
         }
-        
+
         for (const comment of suggested_dupe_comments){
             const item = {
                 id: /\/(\d+)\//.exec(comment.querySelector('.comment-copy a').href)[1],
@@ -536,14 +541,14 @@
                 keywords: [],
                 num_votes: comment.score + 1,
             };
-            
+
             add_original_suggestion(item);
         }
     }
 
     function add_original_suggestion(original){
         const list_elem = document.getElementById('originals-list');
-        
+
         const item = create_original_list_item(original);
         list_elem.appendChild(item);
     }
@@ -555,42 +560,42 @@
         if (document.getElementById('duplicate-manager-searchbar') !== null){
             return;
         }
-        
+
         const dupe_tab = document.querySelector('.close-as-duplicate-pane');
-        
-        const old_searchbar = document.getElementById('search-text');
-        
+
+        const old_searchbar = document.getElementById('duplicate-search');
+
         const searchbar = document.createElement('input');
         searchbar.id = 'duplicate-manager-searchbar';
         searchbar.type = 'text';
         searchbar.style.width = '100%';
         searchbar.addEventListener('input', insert_suggestions);
-        
+
         old_searchbar.parentElement.insertBefore(searchbar, old_searchbar);
         old_searchbar.style.display = 'none';
-        
+
         const orig_display = dupe_tab.querySelector('.original-display');
-        
+
         // we have to create some parent elements with the appropriate classes
         // so that the correct CSS styles apply
         const list_container = document.createElement('div');
         list_container.classList.add('list-container');
-        
+
         const list_origs = document.createElement('div');
         list_origs.classList.add('list-originals');
-        
+
         const suggestions_list = document.createElement('div');
         suggestions_list.id = 'originals-list';
         suggestions_list.classList.add('list');
-        
+
         list_origs.appendChild(suggestions_list);
         list_container.appendChild(list_origs);
         orig_display.querySelector('.list-container').remove();
         orig_display.appendChild(list_container);
-        
+
         // searchbar.focus();
         window.setTimeout(() => searchbar.focus(), 50);
-        
+
         // add suggested duplicates, but leave other people's suggestions alone
         insert_initial_suggestions();
     }
@@ -600,7 +605,7 @@
      */
     function wait_for_dialog_and_hijack_original_search(){
         const dialog_parent = document.querySelector('.container');
-        
+
         const config = {childList: true, subtree: true};
         run_after_last_mutation(hijack_original_search, 50, dialog_parent, config);
     }
@@ -615,14 +620,14 @@
      */
     function make_originals_collection_tab(){
         const neighbor_tab = document.querySelector('.s-navigation a[href$="?tab=bounties"]');
-        
+
         const button = document.createElement('a');
         button.textContent = 'Duplicates';
         button.title = 'Your collection of duplicate targets';
         button.id = 'originals-collection-tab-button';
         button.classList.add('s-navigation--item');
         button.addEventListener('click', populate_originals_collection_tab);
-        
+
         neighbor_tab.parentElement.insertBefore(button, neighbor_tab);
     }
 
@@ -637,61 +642,61 @@
                 button.classList.remove('youarehere');
             }
         }
-        
+
         const originals = await get_originals_list();
-        
+
         const tab = document.createElement('div');
         tab.id = 'duplicate-targets-tab';
         tab.classList.add('user-tab');
-        
+
         // create the "123 Duplicate targets" header
         const subheader = document.createElement('div');
         subheader.classList.add('subheader', 'user-full-tab-header');
-        
+
         const count_heading = document.createElement('h1');
-        
+
         const count_span = document.createElement('span');
         count_span.classList.add('count');
         count_span.textContent = originals.length;
-        
+
         count_heading.appendChild(count_span);
         count_heading.appendChild(new Text(' Duplicate targets'));
-        
+
         subheader.appendChild(count_heading);
-        
+
         // create the "import" and "export" buttons
         const port_menu = document.createElement('span');
         port_menu.classList.add('import-export-buttons');
-        
+
         const import_button = document.createElement('a');
         import_button.textContent = 'import';
         import_button.addEventListener('click', show_import_dialog);
-        
+
         const export_button = document.createElement('a');
         export_button.textContent = 'export';
         export_button.addEventListener('click', show_export_dialog);
-        
+
         port_menu.appendChild(import_button);
         port_menu.appendChild(export_button);
         subheader.appendChild(port_menu);
-        
+
         tab.appendChild(subheader);
-        
+
         // create the list of questions
         const list_container = document.createElement('div');
         list_container.classList.add('user-tab-content');
-        
+
         const originals_list = document.createElement('div');
         originals_list.classList.add('originals-collection');
-        
+
         for (const original of originals){
             const item = create_original_list_item(original);
             originals_list.appendChild(item);
         }
-        
+
         list_container.appendChild(originals_list);
         tab.appendChild(list_container);
-        
+
         // remove the current tab and insert the one we just created instead
         const curtab = document.querySelector('#mainbar-full > div:last-child');
         curtab.parentElement.appendChild(tab);
@@ -704,14 +709,14 @@
     function make_import_export_dialog(title, text){
         const dialog = make_popup_dialog(title);
         dialog.id = 'import-export-dialog';
-        
+
         const text_elem = document.createElement('span');
         text_elem.textContent = text;
         dialog.appendChild(text_elem);
-        
+
         const textarea = document.createElement('textarea');
         dialog.appendChild(textarea);
-        
+
         return dialog;
     }
     function show_import_dialog(){
@@ -719,43 +724,43 @@
             "Import duplicate collection",
             "Paste your JSON dump here:"
         );
-        
+
         function refresh_list(){
             const tab = document.getElementById('duplicate-targets-tab');
             while (tab.firstChild){
                 tab.firstChild.remove();
             }
-            
+
             populate_originals_collection_tab();
         }
-        
+
         const add_button = document.createElement('button');
         add_button.textContent = 'Add to collection';
         add_button.addEventListener('click', async function(){
             const json_dump = dialog.querySelector('textarea').value;
             const collection = JSON.parse(json_dump);
-            
+
             const originals = await get_originals();
             Object.assign(originals, collection);
             await set_originals(originals);
-            
+
             dialog.remove();
             refresh_list();
         });
         dialog.appendChild(add_button);
-        
+
         const replace_button = document.createElement('button');
         replace_button.textContent = 'Overwrite collection';
         replace_button.addEventListener('click', async function(){
             const json_dump = dialog.querySelector('textarea').value;
             const collection = JSON.parse(json_dump);
             await set_originals(collection);
-            
+
             dialog.remove();
             refresh_list();
         });
         dialog.appendChild(replace_button);
-        
+
         document.body.appendChild(dialog);
     }
     async function show_export_dialog(){
@@ -763,10 +768,10 @@
             "Export duplicate collection",
             "Here's a JSON dump of your duplicate collection:"
         );
-        
+
         const collection = await get_originals(true);
         dialog.querySelector('textarea').value = JSON.stringify(collection);
-        
+
         document.body.appendChild(dialog);
     }
 
@@ -818,6 +823,7 @@
     display: flex;
     flex-direction: column;
     float: unset !important;
+    padding: 0.3em !important;
 }
 
 .close-as-duplicate-pane .original-display .list-originals .list .item.duplicate-target .summary {
@@ -899,19 +905,19 @@
                 wait_for_dialog_and_hijack_original_search();
                 return;
             }
-            
+
             // check if the "close as duplicate" button was pressed
             const li = find_parent(event.target, (p => p.tagName === 'LI'));
             if (li === null){
                 return;
             }
-            
+
             const reason_elem = li.querySelector('input');
             if (reason_elem === null){
                 return;
             }
-            
-            if (reason_elem.dataset.subpaneName === 'duplicate'){
+
+            if (reason_elem.value === 'Duplicate'){
                 hijack_original_search();
             }
         }

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         StackExchange duplicate manager
 // @description  Lets you mark questions as commonly used duplicate targets, and search through your collection of duplicate targets from within the close question dialog
-// @version      1.4
+// @version      1.4.1
 // @author       Paul Pinterits
 // @include      *://*.stackexchange.com/questions/*
 // @include      *://meta.serverfault.com/questions/*
@@ -890,7 +890,7 @@
     `);
 
     if (document.location.href.includes('/users/')){
-        if (document.querySelector('#mainbar-full .s-navigation a[href^="/users/edit/"]') !== null){
+        if (document.querySelector('#mainbar-full .s-navigation a[href^="/users/preferences/"]') !== null){
             make_originals_collection_tab();
         }
     } else {
